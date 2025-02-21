@@ -1,18 +1,12 @@
 require('dotenv').config();
 const express = require('express');
-//const mongoose = require('mongoose');
 const cors = require('cors');
 const port = process.env.PORT || 5000;
-
+const { ObjectId } = require('mongodb');
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-// mongoose.connect(process.env.MONGO_URI, {
-//     useNewUrlParser: true,
-//     useUnifiedTopology: true
-// }).then(() => console.log("MongoDB Connected"))
-// .catch(err => console.error(err));
 
 ////////////////////////////
 
@@ -37,13 +31,67 @@ async function run() {
     const taskCollection = client.db("JobTasks").collection("task");
     const userCollection = client.db("JobTasks").collection("users");
     
-    app.get('/task', async(req, res) =>{
-        const result = await taskCollection.find().toArray();
-        res.send(result);
+
+
+    app.post('/users', async(req, res)=>{
+      const user = req.body;
+      //insert if user new
+      const query = {email: user.email}
+      const existingUser = await userCollection.findOne(query);
+      if(existingUser){
+        return res.send({ message: 'user exists', insertedId: null })
+      }
+
+      const result = await userCollection.insertOne(user);
+      res.send(result);
+
+
     })
 
+    //////////////////////////////
 
+    // Get Tasks by User
+    app.get('/tasks', async (req, res) => {
+      const email = req.query.email;
+      const tasks = await taskCollection.find({ email }).toArray();
+      res.send(tasks);
+    });
 
+    // Add Task
+    app.post('/tasks', async (req, res) => {
+      const result = await taskCollection.insertOne(req.body);
+      res.send({ insertedId: result.insertedId });
+
+    });
+
+    // Update Task Category
+    app.put('/tasks/:id', async (req, res) => {
+      const taskId = req.params.id;
+  
+      // ✅ Validate the ID before converting it to ObjectId
+      if (!taskId || taskId.length !== 24) {
+          return res.status(400).json({ error: "Invalid task ID format" });
+      }
+  
+      try {
+          const filter = { _id: new ObjectId(taskId) };
+          const update = { $set: { category: req.body.category } };
+          
+          const result = await taskCollection.updateOne(filter, update);
+          res.send(result);
+      } catch (error) {
+          console.error("Error updating task:", error);
+          res.status(500).json({ error: "Internal Server Error" });
+      }
+  });
+  
+
+    // Delete Task
+    app.delete('/tasks/:id', async (req, res) => {
+      const id = req.params.id;
+      const result = await taskCollection.deleteOne({ _id: new ObjectId(id) });
+      res.send(result);
+    });
 
 
 
