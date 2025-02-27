@@ -28,7 +28,7 @@ const client = new MongoClient(uri, {
 
 async function run() {
     try {
-        await client.connect();
+       // await client.connect();
         const taskCollection = client.db("JobTasks").collection("task");
         const userCollection = client.db("JobTasks").collection("users");
 
@@ -59,7 +59,8 @@ async function run() {
 
         // Get Tasks by User
         app.get('/tasks', async (req, res) => {
-            const tasks = await taskCollection.find().sort({ position: 1 }).toArray();
+            const email = req.query.email;
+            const tasks = await taskCollection.find({ email }).sort({ position: 1 }).toArray();
             res.send(tasks);
         });
 
