@@ -57,6 +57,42 @@ async function run() {
             });
         });
 
+        //user related API
+        app.post('/users', async(req, res)=>{
+            const user = req.body;
+            //insert if user new
+            const query = {email: user.email}
+            const existingUser = await userCollection.findOne(query);
+            if(existingUser){
+              return res.send({ message: 'user exists', insertedId: null })
+            }
+      
+            const result = await userCollection.insertOne(user);
+            res.send(result);
+      
+      
+          })
+
+          
+        app.get('/users', async (req, res) => {
+            const email = req.query.email;
+        
+            if (!email) {
+                return res.status(400).json({ error: "Email is required" });
+            }
+        
+            try {
+                const user = await userCollection.findOne({ email });
+                if (!user) {
+                    return res.status(404).json({ error: "User not found" });
+                }
+                res.json(user);
+            } catch (error) {
+                console.error("Error fetching user data:", error);
+                res.status(500).json({ error: "Internal server error" });
+            }
+        });
+
         // Get Tasks by User
         app.get('/tasks', async (req, res) => {
             const email = req.query.email;
