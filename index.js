@@ -94,11 +94,16 @@ async function run() {
         });
 
         // Get Tasks by User
-        app.get('/tasks', async (req, res) => {
+        app.get("/tasks", async (req, res) => {
             const email = req.query.email;
-            const tasks = await taskCollection.find({ email }).sort({ position: 1 }).toArray();
+            const tasks = await taskCollection
+              .find({ email }) // Fetch only tasks for the user
+              .sort({ createdAt: -1 }) // Sort by latest created task
+              .toArray();
+          
             res.send(tasks);
-        });
+          });
+          
 
         // Add Task
         app.post('/tasks', async (req, res) => {
