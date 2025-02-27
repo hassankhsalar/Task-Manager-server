@@ -73,7 +73,7 @@ async function run() {
       
           })
 
-          
+
         app.get('/users', async (req, res) => {
             const email = req.query.email;
         
@@ -112,6 +112,19 @@ async function run() {
             const result = await taskCollection.deleteOne({ _id: new ObjectId(id) });
             res.send(result);
         });
+        //update task
+        app.patch("/tasks/:id", async (req, res) => {
+            const { id } = req.params;
+            const { category, createdAt } = req.body;
+          
+            const result = await taskCollection.updateOne(
+              { _id: new ObjectId(id) },
+              { $set: { category, createdAt } }
+            );
+          
+            res.send(result);
+          });
+          
 
         console.log("Connected to MongoDB!");
     } catch (error) {
