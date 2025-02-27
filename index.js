@@ -35,22 +35,31 @@ async function run() {
         // Handle WebSocket connections
         io.on("connection", (socket) => {
             console.log("A user connected:", socket.id);
-
             socket.on("taskMoved", async ({ taskId, category, createdAt }) => {
+                console.log("Received taskId:", taskId); // Log the taskId for debugging
+              
                 try {
-                    const updatedTask = await taskCollection.findOneAndUpdate(
-                        { _id: new ObjectId(taskId) },
-                        { $set: { category, createdAt } },
-                        { returnDocument: "after" }
-                    );
-                    
-                    if (updatedTask.value) {
-                        io.emit("taskUpdated", updatedTask.value); // Send update to all clients
-                    }
+                  // Ensure taskId is a valid ObjectId
+                  if (!ObjectId.isValid(taskId)) {
+                    console.error("Invalid taskId:", taskId);
+                    return;
+                  }
+              
+                  const updatedTask = await taskCollection.findOneAndUpdate(
+                    { _id: new ObjectId(taskId) }, // Convert taskId to ObjectId
+                    { $set: { category, createdAt } }, // Update fields
+                    { returnDocument: "after" } // Return the updated document
+                  );
+              
+                  if (updatedTask.value) {
+                    io.emit("taskUpdated", updatedTask.value); // Emit the updated task
+                  } else {
+                    console.error("Task not found or not updated:", taskId);
+                  }
                 } catch (error) {
-                    console.error("Error updating task:", error);
+                  console.error("Error updating task:", error);
                 }
-            });
+              });
 
             socket.on("disconnect", () => {
                 console.log("User disconnected:", socket.id);
